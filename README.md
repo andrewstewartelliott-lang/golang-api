@@ -20,3 +20,14 @@ To execute unit tests:
 ```
 go test -v
 ```
+
+To build local docker image:
+```
+docker build -t tyk:latest .
+```
+
+Using default service account, need to grant cluster-role perms
+```
+kubectl apply -f yaml/clusterRole.yaml
+```
+

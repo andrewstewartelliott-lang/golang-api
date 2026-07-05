@@ -28,6 +28,15 @@ func TestGetKubernetesVersion(t *testing.T) {
 	assert.Equal(t, "", badVer)
 }
 
+func TestGetDeploymentStatus(t *testing.T) {
+	okClientset := fake.NewSimpleClientset()
+	okClientset.Discovery()
+
+	okDeployment, err := getDeploymentStatus(okClientset)
+	assert.NoError(t, err)
+	assert.Equal(t, "No Deployments Found", okDeployment)
+}
+
 func TestHealthHandler(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
 	rec := httptest.NewRecorder()
