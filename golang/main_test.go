@@ -34,7 +34,18 @@ func TestGetDeploymentStatus(t *testing.T) {
 
 	okDeployment, err := getDeploymentStatus(okClientset)
 	assert.NoError(t, err)
+	// no deployments found because we're mocking the clientset
 	assert.Equal(t, "No Deployments Found", okDeployment)
+}
+
+func TestGetK8sApiStatus(t *testing.T) {
+	okClientset := fake.NewSimpleClientset()
+	okClientset.Discovery()
+
+	okapitest, err := getK8sApiStatus(okClientset)
+	assert.NoError(t, err)
+	// pod check fails due to mock clientset
+	assert.Equal(t, "pod check failed", okapitest)
 }
 
 func TestHealthHandler(t *testing.T) {
