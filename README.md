@@ -26,8 +26,12 @@ To build local docker image:
 docker build -t tyk:latest .
 ```
 
-Using default service account, need to grant cluster-role perms
+Using default service account created by helm, need to grant cluster-role perms
 ```
 kubectl apply -f yaml/clusterRole.yaml
 ```
 
+To install via helm:
+```
+helm install tyk-app ./tyk-sre-assignment-chart
+```
