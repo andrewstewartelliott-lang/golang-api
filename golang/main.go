@@ -86,13 +86,6 @@ func getK8sApiStatus(clientset kubernetes.Interface) (string, error) {
 		}
 	}
 
-	nodes, err := clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		panic(err)
-	}
-	if len(nodes.Items) < 1 {
-		return "node check failed", nil
-	}
 	return "Complete", nil
 }
 

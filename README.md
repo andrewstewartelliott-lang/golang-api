@@ -24,6 +24,7 @@ go test -v
 To build local docker image:
 ```
 docker build -t tyk:latest .
+docker tag tyk:latest andrewstewartelliott/tyk:latest
 ```
 
 Using default service account created by helm, need to grant cluster-role perms
@@ -34,4 +35,9 @@ kubectl apply -f yaml/clusterRole.yaml
 To install via helm:
 ```
 helm install tyk-app ./tyk-sre-assignment-chart
+```
+
+To uninstall via helm:
+```
+helm uninstall tyk-app
 ```
