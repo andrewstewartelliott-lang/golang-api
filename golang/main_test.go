@@ -59,7 +59,6 @@ func TestGetDeploymentStatus(t *testing.T) {
 	}
 	okDeployment, err := getDeploymentStatus(okClientset)
 	assert.NoError(t, err)
-	// no deployments found because we're mocking the clientset
 	assert.Equal(t, "Complete", okDeployment)
 }
 
@@ -81,7 +80,6 @@ func TestGetK8sApiStatus(t *testing.T) {
 
 	okapitest, err := getK8sApiStatus(okClientset)
 	assert.NoError(t, err)
-	// pod check fails due to mock clientset
 	assert.Equal(t, "Complete", okapitest)
 }
 
