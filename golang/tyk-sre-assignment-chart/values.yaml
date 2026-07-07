@@ -49,8 +49,10 @@ securityContext: {}
 
 # This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
 service:
-  type: ClusterIP
-  port: 80
+  #type: ClusterIP
+  type: NodePort
+  nodePort: 30000
+  port: 8080
   targetPort: 8080 # The port your Go app listens on
 
 # This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/

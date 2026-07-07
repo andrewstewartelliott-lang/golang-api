@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"net/http"
@@ -11,6 +12,14 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
+
+type DeploymentStatus struct {
+	namespace string
+	name      string
+	available int32
+	desired   int32
+	errors    bool
+}
 
 func main() {
 
@@ -46,7 +55,15 @@ func main() {
 	}
 
 	fmt.Printf("API check status: %s\n", apistatus)
-	fmt.Printf("Deployment check status: %s\n", deployments)
+	fmt.Println("Deployments")
+	fmt.Println(deployments)
+
+	b, err := json.Marshal(deployments)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%s\n", b)
+
 	fmt.Printf("Connected to Kubernetes %s\n", version)
 
 	if err := startServer(*listenAddr, clientset); err != nil {
@@ -90,7 +107,7 @@ func getK8sApiStatus(clientset kubernetes.Interface) (string, error) {
 }
 
 // getDeploymentStatus returns a list of deployments and their associated status
-func getDeploymentStatus(clientset kubernetes.Interface) (string, error) {
+func getDeploymentStatus(clientset kubernetes.Interface) ([]DeploymentStatus, error) {
 	deploymentClient := clientset.AppsV1().Deployments(metav1.NamespaceAll)
 	deployments, err := deploymentClient.List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
@@ -98,18 +115,27 @@ func getDeploymentStatus(clientset kubernetes.Interface) (string, error) {
 	}
 
 	if len(deployments.Items) == 0 {
-		return "No Deployments Found", nil
+		panic("error getting deployments")
 	}
 
+	deploymentList := make([]DeploymentStatus, 0, len(deployments.Items))
+
+	errors := false
 	for _, d := range deployments.Items {
-		fmt.Printf(" Name: %s | Replicas: %d Available / %d Desired\n",
-			d.Name, d.Status.AvailableReplicas, *d.Spec.Replicas)
 		if d.Status.AvailableReplicas != *d.Spec.Replicas {
-			fmt.Println("\n^^^^^^ REPLICAS DO NOT MATCH ^^^^^^")
+			errors = true
 		}
+		// populate array of structs
+		deploymentList = append(deploymentList, DeploymentStatus{
+			namespace: d.Namespace,
+			name:      d.Name,
+			available: d.Status.AvailableReplicas,
+			desired:   *d.Spec.Replicas,
+			errors:    errors,
+		})
 	}
 
-	return "Complete", nil
+	return deploymentList, nil
 }
 
 // startServer launches an HTTP server with defined handlers and blocks until it's terminated or fails with an error.
@@ -130,7 +156,7 @@ func startServer(listenAddr string, clientset kubernetes.Interface) error {
 
 	http.HandleFunc("/healthz", healthHandler)
 	http.HandleFunc("/deploymentstatus", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "deployCheckStatus, %q", deployments)
+		fmt.Println(deployments)
 	})
 	http.HandleFunc("/apistatus", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "apiCheckStatus, %q", apistatus)
