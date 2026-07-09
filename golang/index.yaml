@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  tyk-sre-assignment-chart:
+  - apiVersion: v2
+    appVersion: 1.16.1
+    created: "2026-07-09T13:34:21.769471-04:00"
+    description: A Helm chart for Kubernetes
+    digest: 1985fc01ce705c631a42471dbbec75bab24abe9b2dd51c2807c9a518ec532a09
+    name: tyk-sre-assignment-chart
+    type: application
+    urls:
+    - https://github.com/andrewstewartelliott-lang/helm-charts/tyk-sre-assignment-chart-0.1.0.tgz
+    version: 0.1.0
+generated: "2026-07-09T13:34:21.768692-04:00"
