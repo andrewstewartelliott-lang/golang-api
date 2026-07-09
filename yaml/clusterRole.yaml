@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: default-sa-cluster-view
+subjects:
+- kind: ServiceAccount
+  name: tyk-app-tyk-sre-assignment-chart
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: view # Use 'cluster-admin' instead if the app also needs to create/delete resources
+  apiGroup: rbac.authorization.k8s.io

@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tyk-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tyk-app
+  template:
+    metadata:
+      labels:
+        app: tyk-app
+    spec:
+      containers:
+      - name: tyk-sre-assignment
+        image: andrewstewartelliott/tyk:latest # Must match local tag
+        imagePullPolicy: IfNotPresent      # Prevents K8s from pulling online
+        ports:
+        - containerPort: 8080

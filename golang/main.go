@@ -1,15 +1,27 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net/http"
+	"strings"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+type DeploymentStatus struct {
+	namespace string
+	name      string
+	available int32
+	desired   int32
+	errors    bool
+}
+
 func main() {
+
 	kubeconfig := flag.String("kubeconfig", "", "path to kubeconfig, leave empty for in-cluster")
 	listenAddr := flag.String("address", ":8080", "HTTP server listen address")
 
@@ -30,9 +42,22 @@ func main() {
 		panic(err)
 	}
 
+	// gets deployments in all namespaces
+	deployments, err := getDeploymentStatus(clientset)
+	if err != nil {
+		panic(err)
+	}
+
+	apistatus, err := getK8sApiStatus(clientset)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("API check status: %s\n", apistatus)
+	fmt.Printf("Deployment check status: %s\n", deployments)
 	fmt.Printf("Connected to Kubernetes %s\n", version)
 
-	if err := startServer(*listenAddr); err != nil {
+	if err := startServer(*listenAddr, clientset); err != nil {
 		panic(err)
 	}
 }
@@ -49,11 +74,76 @@ func getKubernetesVersion(clientset kubernetes.Interface) (string, error) {
 	return version.String(), nil
 }
 
+// test the k8s api connection
+func getK8sApiStatus(clientset kubernetes.Interface) (string, error) {
+	found := false
+	pods, err := clientset.CoreV1().Pods(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		panic(err.Error())
+	}
+	if len(pods.Items) < 1 {
+		return "pod check failed", nil
+	} else {
+		for _, pod := range pods.Items {
+			if strings.Contains(pod.Name, "kube-apiserver") {
+				found = true
+			}
+		}
+		if found == false {
+			return "didn't find kube-apiserver pod", nil
+		}
+	}
+
+	return "Complete", nil
+}
+
+// getDeploymentStatus returns a list of deployments and their associated status
+func getDeploymentStatus(clientset kubernetes.Interface) (string, error) {
+	deploymentClient := clientset.AppsV1().Deployments(metav1.NamespaceAll)
+	deployments, err := deploymentClient.List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		panic(err)
+	}
+
+	if len(deployments.Items) < 1 {
+		return "No Deployments Found", nil
+	}
+
+	for _, d := range deployments.Items {
+		//fmt.Printf(" Name: %s | Replicas: %d Available / %d Desired\n",
+		//	d.Name, d.Status.AvailableReplicas, *d.Spec.Replicas)
+		if d.Status.AvailableReplicas != *d.Spec.Replicas {
+			//fmt.Println("\n^^^^^^ REPLICAS DO NOT MATCH ^^^^^^")
+			return "Replica mismatch", nil
+		}
+	}
+
+	return "Complete", nil
+}
+
 // startServer launches an HTTP server with defined handlers and blocks until it's terminated or fails with an error.
 //
 // Expects a listenAddr to bind to.
-func startServer(listenAddr string) error {
+func startServer(listenAddr string, clientset kubernetes.Interface) error {
+
+	// gets deployments in all namespaces
+	deployments, err := getDeploymentStatus(clientset)
+	if err != nil {
+		panic(err)
+	}
+	// gets pods and nodes as an api test
+	apistatus, err := getK8sApiStatus(clientset)
+	if err != nil {
+		panic(err)
+	}
+
 	http.HandleFunc("/healthz", healthHandler)
+	http.HandleFunc("/deploymentstatus", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "deployCheckStatus, %q", deployments)
+	})
+	http.HandleFunc("/apistatus", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "apiCheckStatus, %q", apistatus)
+	})
 
 	fmt.Printf("Server listening on %s\n", listenAddr)
 
