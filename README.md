@@ -1,10 +1,8 @@
-# tyk-sre-assignment
+# project
 
-This repository contains the boilerplate projects for the SRE role interview assignments.
+This repository contains the boilerplate projects for golang api
 
 ### Project
-
-Location: https://github.com/TykTechnologies/tyk-sre-assignment/tree/main/golang
 
 In order to build the project run:
 ```
